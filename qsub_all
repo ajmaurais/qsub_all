@@ -1,0 +1,136 @@
+#!/bin/bash
+#
+# This script takes in one directory as an arguement, checks that the dir exists,
+# and run sequest on all ms2 files found in dir, by generating a .pbs file for
+# each file and submiting it to the queue.
+#
+
+#Written by Aaron Maurais 17_Jan_2016
+
+#global vars
+pbsName="sequest.pbs"
+
+#default args
+mem="12"
+nodes="3"
+ppn="4"
+walltime="12:00:00"
+force=false
+wd=$(pwd)
+
+#displays usage information and exits program
+function usage {
+	echo -e '\nusage: qsub_all [-d <dirrectory>]'
+	echo -e '\t\t[-m <mem>]\n\t\t[-n <nodes>]\n\t\t[-p <ppn>]\n\t\t[-w <walltime>]\n\t\t[-f]\n\t\t[-h]\n'
+	exit
+}
+
+#checks that $1 is not empty or a flag
+function isArg {
+	if [[ $1 == -* ]] || [[ -z "$1" ]] ; then
+		usage
+	fi
+}
+
+#returns the absolute path of a relative reference
+function absPath {
+	if [ -d "$1" ]; then
+		( cd "$1"; echo $(dirs -l +0))
+	else
+		( cd "$(dirname "$1")"; d=$(dirs -l +0); echo "${d%/}/${1##*/}" )
+	fi
+}
+
+
+#generates a .pbs file in dir $1 for a extensionless file name $2
+function generatePBS {
+	echo '#!/bin/tcsh' > $pbsName
+	echo '#PBS -l mem='$mem'gb,nodes='$nodes':ppn='$ppn',walltime='$walltime >> $pbsName
+	echo -e '\nmodule load sequest/2012' >> $pbsName
+	echo 'cat $PBS_NODEFILE' >> $pbsName
+	echo 'cd '$1 >> $pbsName
+	echo -e 'run_ms -f $PBS_NODEFILE' $2'.ms2 >' $2'.log\n' >> $pbsName
+}
+
+#begin main
+
+#get args
+while ! [[ -z "$1" ]] ; do
+	case $1 in
+		"-d")
+			shift
+			isArg "$1"
+			wd=$(absPath "$1");;
+		"-m")
+			shift
+			isArg "$1"
+			mem="$1" ;;
+		"-n")
+			shift
+			isArg "$1"
+			nodes="$1" ;;
+		"-p")
+			shift
+			isArg "$1"
+			ppn="$1" ;;
+		"-w")
+			shift
+			isArg "$1"
+			walltime="$1" ;;
+		"-f")
+			force=true ;;
+		"-h")
+			usage ;;
+		*)
+			usage ;;	
+	esac
+	shift
+done
+
+#check if first arguement points to a dir that exists
+if [ ! -d "$wd" ] ; then
+    echo "Directory does not exist"
+    exit
+fi
+
+#check if dir contains .ms2 files
+if [ $(ls -l $wd/*.ms2 | wc -l) -lt 1 ] ; then
+    echo "ms2 files could not be found in the specified directory! Exiting..."
+    exit
+fi
+
+#list all .ms2 files found in the dir and ask the user if they would like to continue
+cd $wd
+if ! $force ; then
+	echo "The folowing ms2 files were found in "$wd
+	ls -1 *.ms2
+	echo "Would you like to run sequest on the above files? (y/n)"
+	read choice
+	while [ "$choice" != "y" ] && ( [ "$choice" != "n" ] || [[ -z "$choice" ]] ) ; do
+		echo "Invalid choice!"
+		echo "Would you like to continue (y/n)"
+		read choice
+	done
+	if [ "$choice" == "n" ] ; then
+		echo "Exiting..."
+		exit
+	fi
+fi
+
+#check that a sequest.params file is in dir
+if [ ! -f $wd/sequest.params ] ; then
+    echo "A sequest.params file was not found in the specified directory! Exiting..."
+    exit
+fi
+
+#run sequest on all .ms2 files in the dir
+for file in ./*.ms2 ; do
+    fileNoExtension=${file::${#file}-4}
+    generatePBS $wd $fileNoExtension
+    echo $fileNoExtension
+	qsub $pbsName
+done
+
+echo "Sucess!"
+
+#end
