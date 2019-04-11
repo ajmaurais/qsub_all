@@ -44,12 +44,15 @@ function absPath {
 
 #generates a .pbs file in dir $1 for a extensionless file name $2
 function generatePBS {
+	#escape spaces in $1 and $2
+	dir="$(echo $1 | sed 's/ /\\ /g')"
+	file="$(echo $2 | sed 's/ /\\ /g')"
 	echo '#!/bin/tcsh' > $pbsName
 	echo '#PBS -l mem='$mem'gb,nodes='$nodes':ppn='$ppn',walltime='$walltime >> $pbsName
 	echo -e '\nmodule load sequest/2012' >> $pbsName
 	echo 'cat $PBS_NODEFILE' >> $pbsName
-	echo 'cd '$1 >> $pbsName
-	echo -e 'run_ms -f $PBS_NODEFILE' $2'.ms2 >' $2'.log\n' >> $pbsName
+	echo 'cd '$dir >> $pbsName
+	echo -e 'run_ms -f $PBS_NODEFILE' $file'.ms2 >' $file'.log\n' >> $pbsName
 }
 
 #begin main
@@ -94,13 +97,13 @@ if [ ! -d "$wd" ] ; then
 fi
 
 #check if dir contains .ms2 files
-if [ $(ls -l $wd/*.ms2 | wc -l) -lt 1 ] ; then
+if [ $(ls -l "$wd"/*.ms2 | wc -l) -lt 1 ] ; then
     echo "ms2 files could not be found in the specified directory! Exiting..."
     exit
 fi
 
 #list all .ms2 files found in the dir and ask the user if they would like to continue
-cd $wd
+cd "$wd"
 if ! $force ; then
 	echo "The folowing ms2 files were found in "$wd
 	ls -1 *.ms2
@@ -118,7 +121,7 @@ if ! $force ; then
 fi
 
 #check that a sequest.params file is in dir
-if [ ! -f $wd/sequest.params ] ; then
+if [ ! -f "$wd"/sequest.params ] ; then
     echo "A sequest.params file was not found in the specified directory! Exiting..."
     exit
 fi
@@ -126,7 +129,7 @@ fi
 #run sequest on all .ms2 files in the dir
 for file in ./*.ms2 ; do
     fileNoExtension=${file::${#file}-4}
-    generatePBS $wd $fileNoExtension
+    generatePBS "$wd" "$fileNoExtension"
     echo $fileNoExtension
 	qsub $pbsName
 done
