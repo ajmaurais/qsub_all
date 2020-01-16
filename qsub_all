@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# This script takes in one directory as an arguement, checks that the dir exists,
+# This script takes in one directory as an argument, checks that the dir exists,
 # and run sequest on all ms2 files found in dir, by generating a .pbs file for
 # each file and submiting it to the queue.
 #
@@ -90,7 +90,7 @@ while ! [[ -z "$1" ]] ; do
 	shift
 done
 
-#check if first arguement points to a dir that exists
+#check if first argument points to a dir that exists
 if [ ! -d "$wd" ] ; then
     echo "Directory does not exist"
     exit
@@ -105,7 +105,7 @@ fi
 #list all .ms2 files found in the dir and ask the user if they would like to continue
 cd "$wd"
 if ! $force ; then
-	echo "The folowing ms2 files were found in "$wd
+	echo "The following ms2 files were found in "$wd
 	ls -1 *.ms2
 	echo "Would you like to run sequest on the above files? (y/n)"
 	read choice
@@ -134,6 +134,6 @@ for file in ./*.ms2 ; do
 	qsub $pbsName
 done
 
-echo "Sucess!"
+echo "Success!"
 
 #end
