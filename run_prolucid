@@ -8,7 +8,7 @@
 #Written by Aaron Maurais 17_Jan_2016
 
 #global vars
-pbsName="prolucid.pbs"
+pbsName="prolucid"
 
 #default args
 mem="12"
@@ -44,14 +44,19 @@ function absPath {
 
 
 #generates a .pbs file in dir $1 for a extensionless file name $2
+pbs_count=0
+pbs_name_temp=$(printf "$pbs_base"_"%02d".pbs $pbs_count)
 function generatePBS {
+    pbs_count=$((pbs_count+1))
+    pbs_name_temp=$(printf "$pbs_base"_"%02d".pbs $pbs_count)
+    echo $pbs_name_temp
 	#escape spaces in $1 and $2
 	dir="$(echo $1 | sed 's/ /\\ /g')"
 	file="$(echo $2 | sed 's/ /\\ /g')"
-	echo '#!/bin/tcsh' > $pbsName
-	echo '#PBS -l mem='$mem'gb,nodes='$nodes':ppn='$ppn',walltime='$walltime >> $pbsName
-	echo 'cd '$dir >> $pbsName
-	echo -e 'java -Xmx2048m -jar '$prolucid_path' '$file'.ms2 >' $file'.log\n' >> $pbsName
+	echo '#!/bin/tcsh' > $pbs_name_temp
+	echo '#PBS -l mem='$mem'gb,nodes='$nodes':ppn='$ppn',walltime='$walltime >> $pbs_name_temp
+	echo 'cd '$dir >> $pbs_name_temp
+	echo -e 'java -Xmx2048m -jar '$prolucid_path' '$file'.ms2 >' $file'.log\n' >> $pbs_name_temp
 }
 
 #begin main
@@ -130,7 +135,7 @@ for file in ./*.ms2 ; do
     fileNoExtension=${file::${#file}-4}
     generatePBS "$wd" "$fileNoExtension"
     echo $fileNoExtension
-	qsub $pbsName
+	qsub $pbs_name_temp
 done
 
 echo "Success!"
