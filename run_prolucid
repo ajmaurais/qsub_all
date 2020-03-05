@@ -8,7 +8,7 @@
 #Written by Aaron Maurais 17_Jan_2016
 
 #global vars
-pbsName="prolucid"
+pbs_base="prolucid"
 
 #default args
 mem="12"
@@ -16,13 +16,14 @@ nodes="1"
 ppn="1"
 walltime="48:00:00"
 force=false
+submit_jobs=true
 wd=$(pwd)
 prolucid_path="~/local/prolucid1_3/ProLuCID1_3.jar"
 
 #displays usage information and exits program
 function usage {
 	echo -e '\nusage: run_prolucid [-d <dirrectory>]'
-	echo -e '\t\t[-m <mem>]\n\t\t[-n <nodes>]\n\t\t[-p <ppn>]\n\t\t[-w <walltime>]\n\t\t[-f]\n\t\t[-h]\n'
+	echo -e '\t\t[-m <mem>]\n\t\t[-n <nodes>]\n\t\t[-p <ppn>]\n\t\t[-w <walltime>]\n\t\t[-f]\n\t\t[-h]\n\t\t[--dontSubmit]\n'
 	exit
 }
 
@@ -86,6 +87,8 @@ while ! [[ -z "$1" ]] ; do
 			walltime="$1" ;;
 		"-f")
 			force=true ;;
+		"--dontSubmit")
+			submit_jobs=false ;;
 		"-h")
 			usage ;;
 		*)
@@ -135,7 +138,9 @@ for file in ./*.ms2 ; do
     fileNoExtension=${file::${#file}-4}
     generatePBS "$wd" "$fileNoExtension"
     echo $fileNoExtension
-	qsub $pbs_name_temp
+	if $submit_jobs ; then
+		qsub $pbs_name_temp
+	fi
 done
 
 echo "Success!"
