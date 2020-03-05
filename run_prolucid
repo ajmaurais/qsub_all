@@ -1,26 +1,27 @@
 #!/bin/bash
 #
 # This script takes in one directory as an argument, checks that the dir exists,
-# and run sequest on all ms2 files found in dir, by generating a .pbs file for
+# and run prolucid on all ms2 files found in dir, by generating a .pbs file for
 # each file and submiting it to the queue.
 #
 
 #Written by Aaron Maurais 17_Jan_2016
 
 #global vars
-pbsName="sequest.pbs"
+pbsName="prolucid.pbs"
 
 #default args
 mem="12"
-nodes="3"
-ppn="4"
-walltime="12:00:00"
+nodes="1"
+ppn="1"
+walltime="48:00:00"
 force=false
 wd=$(pwd)
+prolucid_path="~/local/prolucid1_3/ProLuCID1_3.jar"
 
 #displays usage information and exits program
 function usage {
-	echo -e '\nusage: qsub_all [-d <dirrectory>]'
+	echo -e '\nusage: run_prolucid [-d <dirrectory>]'
 	echo -e '\t\t[-m <mem>]\n\t\t[-n <nodes>]\n\t\t[-p <ppn>]\n\t\t[-w <walltime>]\n\t\t[-f]\n\t\t[-h]\n'
 	exit
 }
@@ -49,10 +50,8 @@ function generatePBS {
 	file="$(echo $2 | sed 's/ /\\ /g')"
 	echo '#!/bin/tcsh' > $pbsName
 	echo '#PBS -l mem='$mem'gb,nodes='$nodes':ppn='$ppn',walltime='$walltime >> $pbsName
-	echo -e '\nmodule load sequest/2012' >> $pbsName
-	echo 'cat $PBS_NODEFILE' >> $pbsName
 	echo 'cd '$dir >> $pbsName
-	echo -e 'run_ms -f $PBS_NODEFILE' $file'.ms2 >' $file'.log\n' >> $pbsName
+	echo -e 'java -Xmx2048m -jar '$prolucid_path' '$file'.ms2 >' $file'.log\n' >> $pbsName
 }
 
 #begin main
@@ -107,7 +106,7 @@ cd "$wd"
 if ! $force ; then
 	echo "The following ms2 files were found in "$wd
 	ls -1 *.ms2
-	echo "Would you like to run sequest on the above files? (y/n)"
+	echo "Would you like to run prolucid on the above files? (y/n)"
 	read choice
 	while [ "$choice" != "y" ] && ( [ "$choice" != "n" ] || [[ -z "$choice" ]] ) ; do
 		echo "Invalid choice!"
@@ -120,13 +119,13 @@ if ! $force ; then
 	fi
 fi
 
-#check that a sequest.params file is in dir
-if [ ! -f "$wd"/sequest.params ] ; then
-    echo "A sequest.params file was not found in the specified directory! Exiting..."
+#check that a search.xml file is in dir
+if [ ! -f "$wd"/search.xml ] ; then
+    echo "A search.xml file was not found in the specified directory! Exiting..."
     exit
 fi
 
-#run sequest on all .ms2 files in the dir
+#run proludic on all .ms2 files in the dir
 for file in ./*.ms2 ; do
     fileNoExtension=${file::${#file}-4}
     generatePBS "$wd" "$fileNoExtension"
