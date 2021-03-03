@@ -23,8 +23,9 @@ prolucid_path="$HOME/code/prolucid1_3/ProLuCID1_3.jar"
 #displays usage information and exits program
 function usage {
 	echo -e '\nusage: run_prolucid [-d <dirrectory>]'
-	echo -e '\t\t[-m <mem>]\n\t\t[-n <nodes>]\n\t\t[-p <ppn>]\n\t\t[-w <walltime>]\n\t\t[-f]\n\t\t[-h]\n\t\t[--dontSubmit]\n'
-	exit
+	echo -e '\t\t    [-m <mem>]\n\t\t    [-n <nodes>]\n\t\t    [-p <ppn>]\n\t\t    [-w <walltime>]\n\t\t    [-f]\n\t\t    [-h]\n\t\t    [--dontSubmit]\n'
+    echo -e "\tDEFAULTS: mem=$mem\n\t\t  nodes=$nodes\n\t\t  ppn=$ppn\n\t\t  walltime=$walltime\n"
+    exit
 }
 
 #checks that $1 is not empty or a flag
