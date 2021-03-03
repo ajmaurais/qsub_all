@@ -22,6 +22,7 @@ wd=$(pwd)
 function usage {
 	echo -e '\nusage: qsub_all [-d <dirrectory>]'
 	echo -e '\t\t[-m <mem>]\n\t\t[-n <nodes>]\n\t\t[-p <ppn>]\n\t\t[-w <walltime>]\n\t\t[-f]\n\t\t[-h]\n'
+    echo -e "\tDEFAULTS: mem=$mem\n\t\t  nodes=$nodes\n\t\t  ppn=$ppn\n\t\t  walltime=$walltime\n"
 	exit
 }
 
@@ -54,7 +55,7 @@ function generatePBS {
 	file="$(echo $2 | sed 's/ /\\ /g')"
 	echo '#!/bin/tcsh' > $pbs_name_temp
 	echo '#PBS -l mem='$mem'gb,nodes='$nodes':ppn='$ppn',walltime='$walltime >> $pbs_name_temp
-	echo -e '\nmodule load sequest/2012' >> $pbs_name_temp
+	# echo -e '\nmodule load sequest' >> $pbs_name_temp
 	echo 'cat $PBS_NODEFILE' >> $pbs_name_temp
 	echo 'cd '$dir >> $pbs_name_temp
 	echo -e 'run_ms -f $PBS_NODEFILE' $file'.ms2 >' $file'.log\n' >> $pbs_name_temp
